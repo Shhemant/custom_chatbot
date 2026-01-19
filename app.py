@@ -162,7 +162,8 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
             model="llama-3.3-70b-versatile",
             messages=st.session_state.messages,
             tools=tools,
-            tool_choice="auto"
+            tool_choice="auto",
+            temperature=0
         )
         response_msg = response.choices[0].message
         tool_calls = response_msg.tool_calls
@@ -178,8 +179,15 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
                     query = args["query"]
                     
                     status.write(f"Looking for '{query}'...")
-                    tool_result = bert_match(query, df_eco)
+                    raw_result = bert_match(query, df_eco)
                     
+                    # 1. Handle None/Empty results explicitly
+                    if raw_result is None or (isinstance(raw_result, pd.DataFrame) and raw_result.empty):
+                        tool_result = "No matching data found in the database."
+                    # 2. Convert DataFrames/Objects to string
+                    else:
+                        tool_result = str(raw_result)
+
                     st.session_state.messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",
@@ -192,6 +200,7 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
             stream = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=st.session_state.messages,
+                tools=tools,
                 stream=True
             )
             response = st.write_stream(stream)
