@@ -10,8 +10,8 @@ from openai import OpenAI
 import json
 
 
-st.set_page_config(page_title="LCA Agent", page_icon="🌍")
-st.title("🌍 Eco-Design Agent")
+st.set_page_config(page_title="Search Agent", page_icon="🌍")
+st.title("Ecoinvent Search Agent")
 
 # load data
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -144,7 +144,7 @@ if "messages" not in st.session_state:
     # Add a system message (hidden from UI) to guide the agent
     st.session_state.messages.append({
         "role": "system", 
-        "content": "You are a helpful Eco-Assistant. Always search the database before answering factual questions."
+        "content": "You are a helpful Assistant. Always search the database before answering factual questions. You can call the function multiple times (max 3) if necessary"
     })
 
 # Display chat history (exclude system message)
