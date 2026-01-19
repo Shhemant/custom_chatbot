@@ -143,7 +143,7 @@ if "messages" not in st.session_state:
 # Display chat history (exclude system message)
 for message in st.session_state.messages:
     if message["role"] != "system":
-        with st.chat_message(message["role"]):
+        if message.get("content"):
             st.markdown(message["content"])
 
 # Handle User Input
@@ -170,7 +170,14 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
 
         # If the Agent wants to use a tool:
         if tool_calls:
-            st.session_state.messages.append(response_msg) # Log the "intent"
+            # Convert to dict
+            msg_dict = response_msg.model_dump()
+
+            # REMOVE UNSUPPORTED FIELDS (Based on Groq Docs/Errors)
+            msg_dict.pop("annotations", None)  # Fixes "property 'annotations' is unsupported"
+            msg_dict.pop("function_call", None)
+
+            st.session_state.messages.append(msg_dict)
             
             # Show a nice spinner while tool runs
             with st.status("Searching Database...", expanded=True) as status:
@@ -191,7 +198,6 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
                     st.session_state.messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",
-                        "name": "search_database",
                         "content": tool_result
                     })
                     status.update(label="Data Found!", state="complete", expanded=False)
