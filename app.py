@@ -5,16 +5,21 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 import logging
 import scipy.spatial.distance
+from dotenv import load_dotenv
+from openai import OpenAI
 
 # load data
 data_path = os.path.join(DATA_DIR, "data")
 df_eco_new = pd.read_parquet(data_path)
 
+# load api key
+api_key = os.environ("api_key")
 #Load the embedding model(here we use minilm)
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-logger = logging.getLogger("custom chat")
+logger = logging.getLogger("custom ecoinvent chatbot")
 
+# bert match function
 def bert_match(query, df_subset, number_top_matches=10):
     """
     Match query against a subset of the global dataframe.
@@ -71,3 +76,9 @@ def bert_match(query, df_subset, number_top_matches=10):
             "database_version": row.get("db", None)
         })
     return results
+
+# Use Groq for the LLM (Free, Fast, Good at tools)
+client = OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.environ.get("GROQ_API_KEY") 
+)
