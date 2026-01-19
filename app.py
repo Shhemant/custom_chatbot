@@ -1,23 +1,33 @@
 #import necessary packages
+import streamlit as st
 import os
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import logging
 import scipy.spatial.distance
-from dotenv import load_dotenv
 from openai import OpenAI
+import json
+
+
+st.set_page_config(page_title="LCA Agent", page_icon="🌍")
+st.title("🌍 Eco-Design Agent")
 
 # load data
+DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(DATA_DIR, "data")
-df_eco_new = pd.read_parquet(data_path)
 
-# load api key
-api_key = os.environ("api_key")
-#Load the embedding model(here we use minilm)
-model = SentenceTransformer('all-MiniLM-L6-v2')
+# Initialize Groq Client
+if "GROQ_API_KEY" in st.secrets:
+    client = OpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=st.secrets["GROQ_API_KEY"]
+    )
+else:
+    st.error("Missing GROQ_API_KEY in .streamlit/secrets.toml")
+    st.stop()
 
-logger = logging.getLogger("custom ecoinvent chatbot")
+logger = logging.getLogger("custom chatbot")
 
 # bert match function
 def bert_match(query, df_subset, number_top_matches=10):
@@ -72,13 +82,122 @@ def bert_match(query, df_subset, number_top_matches=10):
         results.append({
             "name": row.get("name"),
             "reference_product": row.get("reference product", None), 
-            "product_information": row.get("product information", None),
-            "database_version": row.get("db", None)
+            "product_information": row.get("product information", None)
         })
-    return results
+    logger.info(f'returning results {results}')
+    return json.dumps(results)
 
-# Use Groq for the LLM (Free, Fast, Good at tools)
-client = OpenAI(
-    base_url="https://api.groq.com/openai/v1",
-    api_key=os.environ.get("GROQ_API_KEY") 
-)
+# Initialize Groq Client
+if "GROQ_API_KEY" in st.secrets:
+    client = OpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=st.secrets["GROQ_API_KEY"]
+    )
+else:
+    st.error("Missing GROQ_API_KEY in .streamlit/secrets.toml")
+    st.stop()
+
+# 2. CACHED RESOURCES (Load once, use many times)
+# ---------------------------------------------------------
+@st.cache_resource
+def load_ai_engine():
+    """Load the embedding model and database once."""
+    logger.info("⏳ Loading Model...")
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    
+    # Create dummy data if file is missing (for the demo)
+    logger.info("⏳ Loading Data...")
+    df_eco_new = pd.read_parquet(data_path)
+    return model, df_eco_new
+
+model, df_eco = load_ai_engine()
+
+# tool definition
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_database",
+            "description": "Search for environmental data.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "The search term"}
+                },
+                "required": ["query"],
+            },
+        },
+    }
+]
+
+# 4. CHAT LOGIC
+# ---------------------------------------------------------
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+    # Add a system message (hidden from UI) to guide the agent
+    st.session_state.messages.append({
+        "role": "system", 
+        "content": "You are a helpful Eco-Assistant. Always search the database before answering factual questions."
+    })
+
+# Display chat history (exclude system message)
+for message in st.session_state.messages:
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+# Handle User Input
+if prompt := st.chat_input("Ask about steel, wind, or transport..."):
+    
+    # 1. Add User Message
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # 2. Generate Assistant Response
+    with st.chat_message("assistant"):
+        
+        # Initial Call (Check for tools)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=st.session_state.messages,
+            tools=tools,
+            tool_choice="auto"
+        )
+        response_msg = response.choices[0].message
+        tool_calls = response_msg.tool_calls
+
+        # If the Agent wants to use a tool:
+        if tool_calls:
+            st.session_state.messages.append(response_msg) # Log the "intent"
+            
+            # Show a nice spinner while tool runs
+            with st.status("Searching Database...", expanded=True) as status:
+                for tool_call in tool_calls:
+                    args = json.loads(tool_call.function.arguments)
+                    query = args["query"]
+                    
+                    status.write(f"Looking for '{query}'...")
+                    tool_result = bert_match(query, df_eco)
+                    
+                    st.session_state.messages.append({
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "name": "search_database",
+                        "content": tool_result
+                    })
+                    status.update(label="Data Found!", state="complete", expanded=False)
+
+            # Final Answer (after tool use)
+            stream = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=st.session_state.messages,
+                stream=True
+            )
+            response = st.write_stream(stream)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
+        # If NO tool needed (just chit-chat)
+        else:
+            st.markdown(response_msg.content)
+            st.session_state.messages.append({"role": "assistant", "content": response_msg.content})
