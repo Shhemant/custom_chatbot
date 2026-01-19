@@ -15,7 +15,7 @@ st.title("🌍 Eco-Design Agent")
 
 # load data
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(DATA_DIR, "data")
+data_path = os.path.join(DATA_DIR, "data", "df_ecoinvent.parquet")
 
 # Initialize Groq Client
 if "GROQ_API_KEY" in st.secrets:
@@ -28,7 +28,12 @@ else:
     st.stop()
 
 logger = logging.getLogger("custom chatbot")
-
+# ADD THIS BLOCK
+logging.basicConfig(
+    level=logging.INFO, # Set to logging.DEBUG if you want to see logger.debug() calls
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()] # Ensures logs go to the terminal
+)
 # bert match function
 def bert_match(query, df_subset, number_top_matches=10):
     """
@@ -43,7 +48,7 @@ def bert_match(query, df_subset, number_top_matches=10):
         list[dict]: List of matching activity dictionaries.
     """
 
-    logger.debug('Initiating bert search')
+    logger.info('Initiating bert search')
     if df_subset.empty:
         logger.warning("bert_match called with empty dataframe.")
         return []
@@ -108,6 +113,8 @@ def load_ai_engine():
     # Create dummy data if file is missing (for the demo)
     logger.info("⏳ Loading Data...")
     df_eco_new = pd.read_parquet(data_path)
+    logger.info(f'loaded {data_path}')
+    logger.info(f'shape: {df_eco_new.shape}')
     return model, df_eco_new
 
 model, df_eco = load_ai_engine()
@@ -147,7 +154,7 @@ for message in st.session_state.messages:
             st.markdown(message["content"])
 
 # Handle User Input
-if prompt := st.chat_input("Ask about steel, wind, or transport..."):
+if prompt := st.chat_input("Ask about background datasets such as steel, wind, or transport..."):
     
     # 1. Add User Message
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -171,12 +178,20 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
         # If the Agent wants to use a tool:
         if tool_calls:
             # Convert to dict
-            msg_dict = response_msg.model_dump()
-
-            # REMOVE UNSUPPORTED FIELDS (Based on Groq Docs/Errors)
-            msg_dict.pop("annotations", None)  # Fixes "property 'annotations' is unsupported"
-            msg_dict.pop("function_call", None)
-
+            msg_dict = {
+                "role": "assistant",
+                "content": response_msg.content,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments
+                        }
+                    } for tc in tool_calls
+                ]
+            }
             st.session_state.messages.append(msg_dict)
             
             # Show a nice spinner while tool runs
@@ -202,6 +217,7 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
                     })
                     status.update(label="Data Found!", state="complete", expanded=False)
 
+            logger.info('calling agent')
             # Final Answer (after tool use)
             stream = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -209,6 +225,7 @@ if prompt := st.chat_input("Ask about steel, wind, or transport..."):
                 tools=tools,
                 stream=True
             )
+            logger.info('response received')
             response = st.write_stream(stream)
             st.session_state.messages.append({"role": "assistant", "content": response})
 
