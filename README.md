@@ -59,14 +59,13 @@ Add your Groq API key to the file:
 GROQ_API_KEY = "gsk_..."
 ⚠️ Important: Never commit your secrets.toml file to GitHub!
 
-🏃‍♂️ How to Run
+## 🏃‍♂️ How to Run
 Once everything is installed and configured, run the app with:
 
-Bash
 streamlit run app.py
 A browser window should automatically open pointing to http://localhost:8501.
 
-📂 Project Structure
+## 📂 Project Structure
 app.py: The main application code containing the UI, the search logic, and the LLM integration.
 
 data/: Directory to store the dataset.
@@ -75,7 +74,7 @@ data/: Directory to store the dataset.
 
 requirements.txt: List of Python libraries needed.
 
-🧠 How it Works
+## 🧠 How it Works
 Embedding: When the app starts, it loads the dataset and the BERT model.
 
 User Query: When you ask a question (e.g., "electric car battery"), the app converts your text into numbers (vector embedding).
@@ -84,5 +83,5 @@ Vector Search: It compares your query numbers with the numbers in the database t
 
 LLM Response: The app sends the found data + your question to the Llama 3 model, which writes a human-readable answer.
 
-🤝 Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+## 🤝 Contributing
+Pull requests are welcome
