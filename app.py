@@ -29,7 +29,7 @@ else:
 
 # add logging to see what is happening behind the scenes in the console
 logger = logging.getLogger("custom chatbot")
-# ADD THIS BLOCK
+
 logging.basicConfig(
     level=logging.INFO, # Set to logging.DEBUG if you want to see logger.debug() calls
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -100,6 +100,7 @@ def bert_match(query, df_subset, number_top_matches=10):
 def load_ai_engine():
     """Load the embedding model and database once."""
     logger.info("⏳ Loading Model...")
+    # vector model
     model = SentenceTransformer('all-MiniLM-L6-v2')
     
     # load ecoinvent data - extracted using brightway
@@ -111,7 +112,7 @@ def load_ai_engine():
 
 model, df_eco = load_ai_engine()
 
-# tool definition
+# tool definition - gives access to searching to AI
 tools = [
     {
         "type": "function",
@@ -129,7 +130,7 @@ tools = [
     }
 ]
 
-# 4. CHAT LOGIC
+# 4. CHAT LOGIC with AI and function calling
 # ---------------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
