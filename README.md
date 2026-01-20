@@ -1,11 +1,13 @@
 # 🌍 Ecoinvent Search Agent
 
-A smart AI-powered chat application that helps users search and explore the Ecoinvent database (environmental impact data). 
+A AI-powered chat application that helps users search and explore the Ecoinvent database (only publicly available meta-data, so no license needed). 
 
 This tool combines **Semantic Search** (to find relevant data even if keywords don't match exactly) with a **Large Language Model** (Llama 3 via Groq) to provide natural language answers.
 
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+
+Or use [https://ecoagent.tech/](Ecoagent) for the refined version.
 
 ## ✨ Features
 
