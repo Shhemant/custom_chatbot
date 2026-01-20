@@ -7,7 +7,7 @@ This tool combines **Semantic Search** (to find relevant data even if keywords d
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 
-Or use [Ecoagent](https://ecoagent.tech/) for the refined version.
+Or use [Ecoagent.tech](https://ecoagent.tech/) for the refined version.
 
 ## ✨ Features
 
