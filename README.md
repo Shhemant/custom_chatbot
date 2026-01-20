@@ -57,7 +57,7 @@ Inside that folder, create a file named secrets.toml.
 
 Add your Groq API key to the file:
 
-# .streamlit/secrets.toml
+.streamlit/secrets.toml
 `GROQ_API_KEY = "gsk_..."`
 ⚠️ Important: Never commit your secrets.toml file to GitHub!
 
