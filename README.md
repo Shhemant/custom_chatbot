@@ -34,17 +34,17 @@ It is best practice to keep dependencies isolated.
 Windows:
 
 
-python -m venv venv
-.\venv\Scripts\activate
+`python -m venv venv`
+`.\venv\Scripts\activate`
 
 Mac/Linux:
 
-python3 -m venv venv
-source venv/bin/activate
+`python3 -m venv venv`
+`source venv/bin/activate`
 ### 3. Install Dependencies
 Install the required Python packages listed in requirements.txt:
 
-pip install -r requirements.txt
+`pip install -r requirements.txt`
 
 ### 4. Configure API Keys
 Streamlit handles secrets (like API keys) using a specific file.
@@ -56,13 +56,13 @@ Inside that folder, create a file named secrets.toml.
 Add your Groq API key to the file:
 
 # .streamlit/secrets.toml
-GROQ_API_KEY = "gsk_..."
+`GROQ_API_KEY = "gsk_..."`
 ⚠️ Important: Never commit your secrets.toml file to GitHub!
 
 ## 🏃‍♂️ How to Run
 Once everything is installed and configured, run the app with:
 
-streamlit run app.py
+`streamlit run app.py`
 A browser window should automatically open pointing to http://localhost:8501.
 
 ## 📂 Project Structure
