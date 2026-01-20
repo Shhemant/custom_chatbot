@@ -17,7 +17,7 @@ st.title("Ecoinvent Search Agent")
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(DATA_DIR, "data", "df_ecoinvent.parquet")
 
-# Initialize Groq Client
+# Initialize Groq Client - don't  forget to save api key in .streamlit/secrets.toml (GROQ_API_KEY = "..")
 if "GROQ_API_KEY" in st.secrets:
     client = OpenAI(
         base_url="https://api.groq.com/openai/v1",
@@ -27,6 +27,7 @@ else:
     st.error("Missing GROQ_API_KEY in .streamlit/secrets.toml")
     st.stop()
 
+# add logging to see what is happening behind the scenes in the console
 logger = logging.getLogger("custom chatbot")
 # ADD THIS BLOCK
 logging.basicConfig(
@@ -92,15 +93,6 @@ def bert_match(query, df_subset, number_top_matches=10):
     logger.info(f'returning results {results}')
     return json.dumps(results)
 
-# Initialize Groq Client
-if "GROQ_API_KEY" in st.secrets:
-    client = OpenAI(
-        base_url="https://api.groq.com/openai/v1",
-        api_key=st.secrets["GROQ_API_KEY"]
-    )
-else:
-    st.error("Missing GROQ_API_KEY in .streamlit/secrets.toml")
-    st.stop()
 
 # 2. CACHED RESOURCES (Load once, use many times)
 # ---------------------------------------------------------
@@ -110,7 +102,7 @@ def load_ai_engine():
     logger.info("⏳ Loading Model...")
     model = SentenceTransformer('all-MiniLM-L6-v2')
     
-    # Create dummy data if file is missing (for the demo)
+    # load ecoinvent data - extracted using brightway
     logger.info("⏳ Loading Data...")
     df_eco_new = pd.read_parquet(data_path)
     logger.info(f'loaded {data_path}')
