@@ -1,4 +1,4 @@
-# 🌍 Ecoinvent Search Agent
+# 🌍 Database Search Agent
 
 A AI-powered chat application that helps users search and explore the Ecoinvent database (only publicly available meta-data, so no license needed). 
 
